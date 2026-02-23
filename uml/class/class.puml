@@ -1,0 +1,111 @@
+@startuml
+skinparam classAttributeIconSize 0
+title Class Diagram: Graph Structure
+
+abstract class "Graph<TVertex, TEdge>" as Graph {
+    # m_vertices: std::vector<TVertex*>
+    # m_edges: std::vector<TEdge*>
+    # m_directed: bool
+    # m_weighted: bool
+    + {abstract} addVertex(vertex: TVertex*): int
+    + {abstract} addEdge(edge: TEdge*): void
+    + {abstract} removeVertex(id: int): void
+    + {abstract} removeEdge(edge: TEdge*): void
+    + {abstract} getNeighbors(id: int): std::vector<int>
+    + {abstract} getEdge(fromId: int, toId: int): TEdge*
+    + {abstract} getEdgesFrom(id: int): std::vector<TEdge*>
+    + getVertexById(id: int): TVertex*
+    + getVertexCount(): int
+    + getVertices(): std::vector<TVertex*>&
+    + getEdges() std::vector<TEdge*>&
+    + isDirected(): bool
+    + isWeighted(): bool
+}
+
+class "AdjacencyList<TVertex, TEdge>" as AdjacencyList {
+    - m_adjList: std::vector<std::list<AdjEntry>>
+    - m_freeIds: std::stack<int>
+    + addVertex(vertex: TVertex*): int
+    + addEdge(edge: TEdge*): void
+    + removeEdge(edge: TEdge*): void
+    + removeVertex(id: int): void
+    + getNeighbors(id: int): std::vector<int>
+    + getEdge(fromId: int, toId: int): TEdge*
+    + getEdgesFrom(fromId: int): std::vector<TEdge*>
+}
+
+class AdjEntry <<struct>> {
+    + m_to: int
+    + m_edge: TEdge*
+}
+
+class "AdjacencyMatrix<TVertex, TEdge>" as AdjacencyMatrix {
+    - m_adjMatrix: std::vector<std::vector<TEdge*>>
+    + addVertex(vertex: TVertex*): int
+    + addEdge(edge: TEdge*): void
+    + removeEdge(edge: TEdge*): void
+    + removeVertex(id: int): void
+    + getNeighbors(id: int): std::vector<int>
+    + getEdge(fromId: int, toId: int): TEdge*
+    + getEdgesFrom(fromId: int): std::vector<TEdge*>
+}
+
+class Vertex {
+    - m_id: int
+    - m_name: std::string
+    - m_active: bool
+    + getId(): int
+    + isActive(): bool
+    + markInactive(): void
+    + markActive(): void
+    + getName(): const std::string&
+    + setName(name: const std::string&): void
+    # setId(id: int): void
+}
+
+class Edge {
+    - m_source: Vertex*
+    - m_destination: Vertex*
+    - m_weight: double
+    - m_active: bool
+    + getSource(): Vertex*
+    + getDestination(): Vertex*
+    + getWeight(): double
+    + setWeight: void
+    + getFrom(): int
+    + getTo: int
+    + isActive(): bool
+    + markInactive(): void
+    + markActive(): void
+}
+
+class AlgorithmController {
+    - m_history: std::vector<AlgoState>
+    - m_currentStep: size_t
+    - reconstructPath(startId, endId): std::vector<EdgeId>
+    + start(startId, endId, state): bool
+    + nextStep(state): bool
+}
+
+struct AlgoState {
+    + currentVertex: int
+    + currentEdges: std::vector<EdgeId>
+    + visitedVertices: std::vector<int>
+    + visitedEdges: std::vector<EdgeId>
+    + distances: std::vector<double>
+    + predecessors: std::vector<int>
+    + frontier: std::vector<int>
+    + message: std::string
+    + shortestPathEdges: std::vector<EdgeId>
+}
+
+Graph <|-- AdjacencyList
+Graph <|-- AdjacencyMatrix
+Graph "1" *-- "many" Vertex : Owns/Deletes
+Graph "1" *-- "many" Edge : Owns/Deletes
+Edge "1" o-- "2" Vertex : References
+AdjacencyList +-- AdjEntry
+AdjEntry o-- Edge : contains
+AlgorithmController o-- Graph : Manages
+AlgorithmController *-- AlgoState : History
+@enduml
