@@ -1,0 +1,30 @@
+@startuml
+title Composite Diagram: MainWindow Internal Structure
+
+package "GraphVisualizer System" <<Component>> {
+    
+    component MainWindow {
+        port "User Signals" as P_UI
+        port "Graphics View" as P_View
+        port "File Output" as P_File
+        
+        [m_controlPanel] as CP <<ControlPanel>>
+        [m_algoController] as AC <<AlgorithmController>>
+        [m_graph] as Graph <<AdjacencyList>>
+        [m_scene] as GS <<GraphScene>>
+        [m_graphvizEngine] as GV <<GraphvizEngine>>
+
+        P_UI -- CP
+        CP ..> AC : "Triggers via MainWindow Slots"
+        
+        AC -- Graph : "Traverses"
+        GV -- Graph : "Reads Structure"
+        
+        AC ..> GS : "State applied to items via MainWindow"
+        GV ..> GS : "Layout positions applied"
+        
+        GS -- P_View : "Renders"
+        GV -- P_File : "Writes image/DOT"
+    }
+}
+@enduml
