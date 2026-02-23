@@ -1,0 +1,48 @@
+@startuml
+title Component Diagram: Graph Visualizer
+
+package "GUI Subsystem (Qt Widgets)" {
+    component [MainWindow] as MW <<Mediator>>
+    component [ControlPanel] as CP <<UI Form>>
+}
+
+package "Visualization Subsystem" {
+    component [GraphScene] as Scene <<QGraphicsScene>>
+}
+
+package "Logic Subsystem" {
+    component [AlgorithmController] as Logic
+}
+
+package "Core Subsystem (Data)" {
+    component "Graph\n<TVertex, TEdge>" as Core
+}
+
+package "Export & Layout Subsystem" {
+    component [GraphvizEngine] as Layout
+}
+
+component "Graphviz C-API\n(libgvc / libcgraph)" as GVC <<External Library>>
+
+() "IAlgorithm" as IAlgo
+() "IDataAccess" as IData
+() "ILayoutExport" as ILay
+() "IVisualizer" as IVis
+
+Logic -up- IAlgo : "Provides state/steps"
+Core -up- IData : "Provides topology"
+Layout -up- ILay : "Provides DOT export"
+Scene -up- IVis : "Provides visual mapping"
+
+CP -right-> MW : <<signal>> next(), export()
+
+MW --( IAlgo : "Triggers nextStep()"
+MW --( ILay : "Requests exportToFile()"
+MW --( IVis : "Calls applyState()"
+
+Logic --( IData : "Traverses (BFS/DFS/Dijkstra)"
+Layout --( IData : "Translates to Agraph_t"
+Scene --( IData : "Reads coordinates/IDs"
+
+Layout ..> GVC : <<link>>
+@enduml
