@@ -1,0 +1,37 @@
+@startuml
+
+title Deployment Diagram: Local Execution Environment
+
+node "User PC" <<device>> {
+    node "OS Environment (Win/Linux/macOS)" {
+        
+        artifact "GraphVisualizer executable" <<binary>> as App
+        
+        artifact "app_settings.json" <<config>> as Config
+
+        node "Shared Libraries" {
+            artifact "Qt Framework" {
+                file "Qt6Core, Qt6Widgets, Qt6Gui"
+            }
+            artifact "Graphviz Runtime" {
+                file "libgvc, libcgraph, libcdt"
+                file "gvplugin_dot, gvplugin_core" <<plugins>>
+            }
+        }
+        
+        node "Disk Drive" <<storage>> {
+            node "File System" <<system>> {
+                folder "Export Directory" as ExportDir {
+                    file "graph_exports.{png, svg, dot, pdf, json, jpeg}"
+                }
+            }
+        }
+    }
+}
+
+App ..> [Qt Framework] : <<dynamic link>>
+App ..> [Graphviz Runtime] : <<dynamic link>>
+App ..> Config : <<reads/writes>>
+App -right-> ExportDir : writes via\nGraphvizEngine
+
+@enduml
