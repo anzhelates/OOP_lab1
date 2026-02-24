@@ -1,0 +1,52 @@
+@startuml
+title Object Diagram: 2 Vertices and 1 Edge Mapping
+
+object "v0 : Vertex" as v0 {
+    m_id = 0
+    m_name = "v0"
+    m_active = true
+}
+
+object "v1 : Vertex" as v1 {
+    m_id = 1
+    m_name = "v1"
+    m_active = true
+}
+
+object "e01 : Edge" as e01 {
+    m_source = &v0
+    m_destination = &v1
+    m_weight = 1.0
+    m_active = true
+}
+
+object "vItem0 : VertexItem" as vi0 {
+    m_vertex = &v0
+    m_defaultColor = Qt::cyan
+}
+
+object "vItem1 : VertexItem" as vi1 {
+    m_vertex = &v1
+    m_defaultColor = Qt::cyan
+}
+
+object "edgeItem01 : EdgeItem" as ei01 {
+    m_edge = &e01
+    m_sourceItem = &vItem0
+    m_destItem = &vItem1
+    m_isDirected = true
+    m_isWeighted = true
+    m_defaultColor = Qt::black
+}
+
+e01 --> v0 : m_source
+e01 --> v1 : m_destination
+
+vi0 --> v0 : m_vertex
+vi1 --> v1 : m_vertex
+ei01 --> e01 : m_edge
+
+ei01 --> vi0 : m_sourceItem
+ei01 --> vi1 : m_destItem
+
+@enduml
