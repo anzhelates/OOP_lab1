@@ -1,0 +1,52 @@
+@startuml
+title Use Case Diagram: Graph Visualizer System
+left to right direction
+
+actor User
+
+package "Graph Visualizer System" {
+    package "Graph Configuration & Editing" {
+        usecase "Initialize Graph (Directed/Weighted)" as UC1
+        usecase "Edit Topology" as UC2
+        usecase "Add/Remove Vertex/Edge" as UC2a
+        usecase "Move Vertex" as UC2c
+        usecase "Modify Data (Set Weights)" as UC3
+        usecase "Apply Automatic Layout" as UC4
+    }
+
+    package "Algorithm Execution & Animation" {
+        usecase "Select Algorithm (BFS/DFS/Dijkstra)" as UC5
+        usecase "Configure Parameters (Select Start/End Vertex)" as UC6
+        usecase "Control Execution" as UC7
+        usecase "Step Logic (Next/Prev)" as UC7a
+        usecase "Automate Animation" as UC7b
+        usecase "Reset Algorithm" as UC7c
+        usecase "Adjust Animation Speed" as UC8
+    }
+
+    package "Data Management & Export" {
+        usecase "Export Results" as UC9
+        usecase "Configure Export Settings (Path and Format\n(PNG/SVG/PDF/DOT/JSON/JPEG))" as UC10
+    }
+}
+
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC5
+User --> UC6
+User --> UC7
+User --> UC8
+User --> UC9
+
+UC2 <|-- UC2a
+UC2 <|-- UC2c
+UC1 ..> UC4 : <<include>>\n(Initial Layout)
+UC7 <|-- UC7a
+UC7 <|-- UC7b
+UC7 <|-- UC7c
+UC7b ..> UC7a : <<include>>\n(Timer triggers Step)
+UC9 ..> UC10 : <<include>>
+
+@enduml
