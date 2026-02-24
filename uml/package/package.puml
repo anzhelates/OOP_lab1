@@ -1,0 +1,52 @@
+@startuml
+
+title Package Diagram: Project Architecture
+
+package "GUI" {
+    component "MainWindow\n(.h, .cpp, .ui)" as MainWindow
+    
+    package "Dialogs" {
+        component "GraphSetupDialog\n(.h, .cpp, .ui)" as SetupDialog
+        component "AddEdgeDialog\n(.h, .cpp, .ui)" as EdgeDialog
+    }
+}
+
+package "Logic" {
+    component "AlgorithmController\n(.h, .cpp)" as AlgoCtrl
+    component "GraphAlgorithms\n(.h)" <<template>> as Algo
+}
+
+package "Visualization" {
+    component "GraphScene\n(.h, .cpp)" as GraphScene
+    component "VertexItem\n(.h, .cpp)" as VertexItem
+    component "EdgeItem\n(.h, .cpp)" as EdgeItem
+}
+
+package "External" {
+    component "GraphvizEngine\n(.h, .cpp)" as Graphviz
+}
+
+package "Core" {
+    component "Graph.h" as Graph
+    component "Vertex.h" as Vertex
+    component "Edge.h" as Edge
+    component "AdjacencyList.h" <<template>> as AdjList
+    component "AdjacencyMatrix.h" <<template>> as AdjMatrix
+}
+
+package "Exports" <<Artifacts>> {
+    artifact "graph_output.gv" as out_gv <<Graphviz Source>>
+    artifact "graph_layout.png" as out_png <<Rendered>>
+}
+
+GUI ..> Visualization : <<use>>
+GUI ..> Logic : <<use>>
+GUI ..> External : <<access>>
+
+Visualization ..> Core : <<import>>
+Logic ..> Core : <<import>>
+External ..> Core : <<access>>
+
+External ..> Exports : <<generate>>
+
+@enduml
