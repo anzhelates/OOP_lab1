@@ -1,0 +1,44 @@
+@startuml
+title Sequence Diagram: Vertex Movement and Edge Synchronization
+
+actor User
+participant "Graphics View" as UI
+participant "v : VertexItem" as Vertex
+participant "e : EdgeItem" as Edge
+participant "Base : QGraphicsEllipseItem" as Base
+
+User -> UI : Mouse Drag
+activate UI
+
+UI -> Vertex : itemChange(ItemPositionHasChanged, newValue)
+activate Vertex
+
+opt scene() != nullptr
+    loop for each e in m_edgeList
+        Vertex -> Edge : trackVertices()
+        activate Edge
+        
+        Edge -> Edge : prepareGeometryChange()
+        
+        Edge -> Vertex : pos() (Get coords)
+        Vertex --> Edge : return QPointF
+        
+        Edge -> Edge : setPath(newPath)
+        
+        Edge --> Vertex : done
+        deactivate Edge
+    end
+end
+
+Vertex -> Base : QGraphicsEllipseItem::itemChange(change, value)
+activate Base
+Base --> Vertex : return QVariant(pos)
+deactivate Base
+
+Vertex --> UI : return QVariant
+deactivate Vertex
+
+UI --> User : Update Frame 
+deactivate UI
+
+@enduml
