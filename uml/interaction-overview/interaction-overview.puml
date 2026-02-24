@@ -1,0 +1,47 @@
+@startuml
+title Interaction Overview Diagram: Graph Algorithm Visualizer
+
+start
+
+group Initialization
+    :ref Initialization;
+    note right: Construct MainWindow, Scene, \nand AdjacencyList
+end group
+
+repeat
+    :Wait for Qt Event;
+
+    if (Event Type?) then (Edit Graph)
+        partition "Graph Modification" {
+            :ref Graph::addVertex/Edge;
+            :ref VertexItem::itemChange;
+        }
+
+    elseif (Algorithm) then (Start)
+        partition "sd Algorithm Logic" {
+            :ref AlgorithmController::computeSteps;
+            repeat
+                if (User Action?) then (Step Forward)
+                    :ref nextStep();
+                else (Step Backward)
+                    :ref prevStep();
+                endif
+                
+                partition "Visual Sync" {
+                    :ref UI Update (Colors/Text);
+                    :ref EdgeItem::trackVertices;
+                }
+            repeat while (Navigation Active?) is (Yes)
+        }
+
+    elseif (Auto-Layout) then (Compute)
+        :ref Layout Computation (Graphviz);
+
+    else (File/Export)
+        :ref Export System;
+    endif
+
+repeat while (Application Running?) is (Yes)
+
+stop
+@enduml
