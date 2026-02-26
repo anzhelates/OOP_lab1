@@ -16,11 +16,11 @@ class GraphSetupDialog : public QDialog {
     Q_OBJECT
 public:
     explicit GraphSetupDialog(QWidget* parent = nullptr);
-    ~GraphSetupDialog();
+    ~GraphSetupDialog() override;
 
     GraphSettings getSettings() const;
     int getVertexCount() const;
-    std::vector<std::tuple<int,int,int>> getEdges() const;
+    std::vector<std::tuple<int, int, double>> getEdges() const;
 
 private:
     Ui::GraphSetupDialog* ui;

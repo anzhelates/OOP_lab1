@@ -20,7 +20,8 @@ AddEdgeDialog::AddEdgeDialog(bool weighted, int maxVertexId, QWidget* parent) :
     ui->toSpinBox->setMaximum(maxVertexId);
     ui->toSpinBox->setValue(0);
 
-    ui->weightSpinBox->setMinimum(0.01);
+    ui->weightSpinBox->setMinimum(0.0);
+    ui->weightSpinBox->setMaximum(9999.0);
     ui->weightSpinBox->setValue(1.0);
 
     if (!weighted) {
@@ -32,14 +33,6 @@ AddEdgeDialog::~AddEdgeDialog() {
     delete ui;
 }
 
-int AddEdgeDialog::getFromId() const {
-    return ui->fromSpinBox->value();
-}
-
-int AddEdgeDialog::getToId() const {
-    return ui->toSpinBox->value();
-}
-
-double AddEdgeDialog::getWeight() const {
-    return ui->weightSpinBox->value();
-}
+int AddEdgeDialog::getFromId() const { return ui->fromSpinBox->value(); }
+int AddEdgeDialog::getToId() const { return ui->toSpinBox->value(); }
+double AddEdgeDialog::getWeight() const { return ui->weightSpinBox->value(); }

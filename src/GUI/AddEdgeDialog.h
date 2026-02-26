@@ -7,9 +7,9 @@ QT_END_NAMESPACE
 
 class AddEdgeDialog : public QDialog {
     Q_OBJECT
-    public:
+public:
     explicit AddEdgeDialog(bool weighted, int maxVertexId, QWidget* parent = nullptr);
-    ~AddEdgeDialog();
+    ~AddEdgeDialog() override;
 
     int getFromId() const;
     int getToId() const;
