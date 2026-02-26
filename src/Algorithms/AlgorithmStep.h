@@ -1,8 +1,6 @@
 #pragma once
-
 #include <vector>
 #include <string>
-#include <limits>
 
 struct EdgeId {
     int from = -1;
@@ -19,15 +17,10 @@ struct EdgeId {
 
 struct AlgoState {
     int currentVertex = -1;
-    std::vector<EdgeId> currentEdges;
+    std::vector<int> frontier;
     std::vector<int> visitedVertices;
     std::vector<EdgeId> visitedEdges;
-
     std::vector<double> distances;
-    std::vector<int> predecessors;
-
     std::vector<EdgeId> shortestPathEdges;
-
-    std::vector<int> frontier;
     std::string message;
 };
