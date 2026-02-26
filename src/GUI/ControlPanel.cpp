@@ -4,35 +4,34 @@
 #include <QComboBox>
 #include <QSlider>
 #include <QVariant>
-#include "AlgorithmController.h"
+#include <cmath>
+#include <algorithm>
+
+using namespace Algorithms;
 
 ControlPanel::ControlPanel(QWidget* parent)
-    : QWidget(parent),
-      ui(new Ui::ControlPanel)
+    : QWidget(parent), ui(new Ui::ControlPanel)
 {
     ui->setupUi(this);
     ui->algorithmComboBox->addItem("BFS", QVariant::fromValue(AlgorithmType::BFS));
     ui->algorithmComboBox->addItem("DFS", QVariant::fromValue(AlgorithmType::DFS));
     ui->algorithmComboBox->addItem("Dijkstra", QVariant::fromValue(AlgorithmType::Dijkstra));
 
-    ui->exportFormatComboBox->addItem("PNG");
-    ui->exportFormatComboBox->addItem("SVG");
-    ui->exportFormatComboBox->addItem("DOT");
-    ui->exportFormatComboBox->addItem("PDF");
-    ui->exportFormatComboBox->addItem("JSON");
-    ui->exportFormatComboBox->addItem("JPEG");
+    QStringList exportFormats = {"PNG", "SVG", "DOT", "PDF", "JSON", "JPEG"};
+    ui->exportFormatComboBox->addItems(exportFormats);
 
     ui->endVertexLabel->setVisible(false);
     ui->endVertexComboBox->setVisible(false);
 
-    connect(ui->setupGraphButton, &QPushButton::clicked, this, &ControlPanel::setupGraphClicked);
-    connect(ui->addVertexButton, &QPushButton::clicked, this, &ControlPanel::onAddVertexClicked);
-    connect(ui->addEdgeButton, &QPushButton::clicked, this, &ControlPanel::onAddEdgeClicked);
-    connect(ui->removeVertexButton, &QPushButton::clicked, this, &ControlPanel::onRemoveVertexClicked);
-    connect(ui->removeEdgeButton, &QPushButton::clicked, this, &ControlPanel::onRemoveEdgeClicked);
-    connect(ui->applyLayoutButton, &QPushButton::clicked, this, &ControlPanel::onApplyLayoutClicked);
+    connect(ui->setupGraphButton, &QPushButton::clicked, this, &ControlPanel::setupGraphButtonClicked);
+    connect(ui->addVertexButton, &QPushButton::clicked, this, &ControlPanel::addVertexClicked);
+    connect(ui->addEdgeButton, &QPushButton::clicked, this, &ControlPanel::addEdgeClicked);
+    connect(ui->removeVertexButton, &QPushButton::clicked, this, &ControlPanel::removeVertexClicked);
+    connect(ui->removeEdgeButton, &QPushButton::clicked, this, &ControlPanel::removeEdgeClicked);
+    connect(ui->applyLayoutButton, &QPushButton::clicked, this, &ControlPanel::applyLayoutClicked);
     connect(ui->exportButton, &QPushButton::clicked, this, &ControlPanel::onExportClicked);
-    connect(ui->chooseDirButton, &QPushButton::clicked, this, &ControlPanel::onChooseDirClicked);
+    connect(ui->chooseDirButton, &QPushButton::clicked, this, &ControlPanel::chooseDirClicked);
+
     connect(ui->startButton, &QPushButton::clicked, this, &ControlPanel::onStartAlgorithmClicked);
     connect(ui->resetButton, &QPushButton::clicked, this, &ControlPanel::onResetClicked);
     connect(ui->nextButton, &QPushButton::clicked, this, &ControlPanel::nextClicked);
@@ -40,9 +39,7 @@ ControlPanel::ControlPanel(QWidget* parent)
     connect(ui->playButton, &QPushButton::clicked, this, &ControlPanel::onPlayAlgorithmClicked);
     connect(ui->pauseButton, &QPushButton::clicked, this, &ControlPanel::onPauseAlgorithmClicked);
     connect(ui->speedSlider, &QSlider::valueChanged, this, &ControlPanel::onSpeedSliderChanged);
-
-    connect(ui->algorithmComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &ControlPanel::onAlgorithmChanged);
+    connect(ui->algorithmComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ControlPanel::onAlgorithmChanged);
 
     setGraphEditingEnabled(false);
     setAlgorithmControlsEnabled(false);
@@ -50,7 +47,9 @@ ControlPanel::ControlPanel(QWidget* parent)
     onSpeedSliderChanged(ui->speedSlider->value());
 }
 
-ControlPanel::~ControlPanel() { delete ui; }
+ControlPanel::~ControlPanel() {
+    delete ui;
+}
 
 void ControlPanel::setGraphEditingEnabled(bool enabled) {
     ui->graphEditBox->setEnabled(enabled);
@@ -60,16 +59,14 @@ void ControlPanel::setGraphEditingEnabled(bool enabled) {
 void ControlPanel::setAlgorithmControlsEnabled(bool enabled) {
     ui->algorithmBox->setEnabled(enabled);
     ui->playerBox->setEnabled(enabled);
-    if (enabled) {
-         resetPlayerControls();
-    }
+    if (enabled) resetPlayerControls();
 }
 
 void ControlPanel::setExportEnabled(bool enabled) {
     ui->exportBox->setEnabled(enabled);
 }
 
-void ControlPanel::updateStartVertexComboBox(const std::vector<Vertex*>& vertices) {
+void ControlPanel::updateStartVertexComboBox(const std::vector<const Core::Vertex*>& vertices) {
     int currentStartId = ui->startVertexComboBox->count() > 0 ? ui->startVertexComboBox->currentData().toInt() : -1;
     int currentEndId = ui->endVertexComboBox->count() > 0 ? ui->endVertexComboBox->currentData().toInt() : -1;
 
@@ -77,9 +74,9 @@ void ControlPanel::updateStartVertexComboBox(const std::vector<Vertex*>& vertice
     ui->endVertexComboBox->clear();
 
     bool hasActive = false;
-    for (auto v : vertices) {
+    for (const auto* v : vertices) {
         if (v && v->isActive()) {
-            QString name = QString("Vertex %1").arg(QString::number(v->getId()));
+            QString name = QString::fromStdString(v->getName());
             ui->startVertexComboBox->addItem(name, QVariant(v->getId()));
             ui->endVertexComboBox->addItem(name, QVariant(v->getId()));
             hasActive = true;
@@ -90,11 +87,7 @@ void ControlPanel::updateStartVertexComboBox(const std::vector<Vertex*>& vertice
     ui->startVertexComboBox->setCurrentIndex(newStartIdx != -1 ? newStartIdx : 0);
 
     int newEndIdx = ui->endVertexComboBox->findData(currentEndId);
-    if (newEndIdx != -1) {
-        ui->endVertexComboBox->setCurrentIndex(newEndIdx);
-    } else {
-        ui->endVertexComboBox->setCurrentIndex(ui->endVertexComboBox->count() - 1);
-    }
+    ui->endVertexComboBox->setCurrentIndex(newEndIdx != -1 ? newEndIdx : std::max(0, ui->endVertexComboBox->count() - 1));
 
     ui->algorithmBox->setEnabled(hasActive);
     ui->playerBox->setEnabled(hasActive);
@@ -120,7 +113,8 @@ void ControlPanel::onStartAlgorithmClicked() {
     if (ui->startVertexComboBox->count() == 0) return;
 
     int startId = ui->startVertexComboBox->currentData().toInt();
-    int endId = ui->endVertexComboBox->currentData().toInt();
+    AlgorithmType type = ui->algorithmComboBox->currentData().value<AlgorithmType>();
+    int endId = (type == AlgorithmType::Dijkstra) ? ui->endVertexComboBox->currentData().toInt() : -1;
 
     ui->setupGraphButton->setEnabled(false);
     ui->graphEditBox->setEnabled(false);
@@ -143,7 +137,6 @@ void ControlPanel::onPauseAlgorithmClicked() {
     ui->pauseButton->setEnabled(false);
     ui->nextButton->setEnabled(true);
     ui->prevButton->setEnabled(true);
-
     emit pauseAlgorithmClicked();
 }
 
@@ -160,14 +153,10 @@ void ControlPanel::onResetClicked() {
     emit resetClicked();
 }
 
-void ControlPanel::setupGraphClicked() {
-    emit setupGraphButtonClicked();
-}
-
 void ControlPanel::onAlgorithmChanged(int index) {
     AlgorithmType type = ui->algorithmComboBox->itemData(index).value<AlgorithmType>();
-
     bool isDijkstra = (type == AlgorithmType::Dijkstra);
+
     ui->endVertexLabel->setVisible(isDijkstra);
     ui->endVertexComboBox->setVisible(isDijkstra);
 
@@ -175,31 +164,16 @@ void ControlPanel::onAlgorithmChanged(int index) {
 }
 
 void ControlPanel::onSpeedSliderChanged(int value) {
-    double minp = 0;
-    double maxp = 100;
-    double minv = log(50);
-    double maxv = log(2000);
+    double minp = 0, maxp = 100;
+    double minv = std::log(50), maxv = std::log(2000);
     double scale = (maxv - minv) / (maxp - minp);
-    double speed = exp(minv + scale * (maxp - value));
+    double speed = std::exp(minv + scale * (maxp - value));
     emit speedChanged(static_cast<int>(speed));
-}
-
-void ControlPanel::onApplyLayoutClicked() {
-    emit applyLayoutClicked();
 }
 
 void ControlPanel::onExportClicked() {
     emit exportClicked(ui->exportFormatComboBox->currentText());
 }
-
-void ControlPanel::onChooseDirClicked() {
-    emit chooseDirClicked();
-}
-
-void ControlPanel::onAddVertexClicked() { emit addVertexClicked(); }
-void ControlPanel::onAddEdgeClicked() { emit addEdgeClicked(); }
-void ControlPanel::onRemoveVertexClicked() { emit removeVertexClicked(); }
-void ControlPanel::onRemoveEdgeClicked() { emit removeEdgeClicked(); }
 
 QPushButton* ControlPanel::getNextButton() const { return ui->nextButton; }
 QPushButton* ControlPanel::getPrevButton() const { return ui->prevButton; }
