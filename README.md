@@ -1,7 +1,8 @@
 # Лабораторна робота №1 "Рефакторінг та моделювання з використанням UML"
 
 1. Звіт до лабораторної роботи можна переглянути за [посиланням](https://docs.google.com/document/d/1dGkdkAxqtHb089YPGkF2-kL0QC2CkWogT9qMjGAXGps/edit?usp=sharing)
-3. Документацію можна переглянути за [посиланням](https://anzhelates.github.io/OOP_lab1/)
+2. [Зміни в коді](https://github.com/anzhelates/OOP_lab1/compare/607c607...6acc517)
+3. [Документація](https://anzhelates.github.io/OOP_lab1/)
 
 ### Глосарій "Graph Visualizer"
 
