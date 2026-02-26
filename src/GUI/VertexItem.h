@@ -1,41 +1,38 @@
 #pragma once
-
 #include <QGraphicsEllipseItem>
 #include <QColor>
+#include <QString>
 #include <QList>
-#include <QVariant>
-#include "Vertex.h"
 
 class QGraphicsTextItem;
 class EdgeItem;
 
 class VertexItem : public QGraphicsEllipseItem {
 public:
-    explicit VertexItem(Vertex* vertex, QGraphicsItem* parent = nullptr);
+    explicit VertexItem(int id, const QString& label, QGraphicsItem* parent = nullptr);
     ~VertexItem() override;
 
-    Vertex* getVertex() const { return m_vertex; }
-    int getId() const { return m_vertex ? m_vertex->getId() : -1; }
+    int getId() const { return m_id; }
+    void setLabel(const QString& label);
 
     void setColor(const QColor& color);
     void resetColor();
-
-    void addEdge(EdgeItem* edge);
-    void removeEdge(EdgeItem* edge);
-    void removeEdges();
-
     void setDistanceText(const QString& text);
     void hideDistanceText();
 
-    static constexpr int Radius = 15;
+    void addEdge(EdgeItem* edge);
+    void removeEdge(EdgeItem* edge);
+    QList<EdgeItem*> getEdges() const { return m_edges; }
+
+    static constexpr int Radius = 20;
 
 protected:
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+    QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
 private:
-    Vertex* m_vertex;
-    QGraphicsTextItem* m_label;
-    QGraphicsTextItem* m_distanceLabel;
+    int m_id;
     QColor m_defaultColor;
-    QList<EdgeItem*> m_edgeList;
+    QGraphicsTextItem* m_labelItem;
+    QGraphicsTextItem* m_distItem;
+    QList<EdgeItem*> m_edges;
 };

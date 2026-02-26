@@ -1,40 +1,43 @@
 #pragma once
-
 #include <QGraphicsPathItem>
-#include "Edge.h"
+#include <QPen>
 
 class VertexItem;
 class QGraphicsTextItem;
 
 class EdgeItem : public QGraphicsPathItem {
 public:
-    EdgeItem(Edge* edge, VertexItem* sourceItem, VertexItem* destItem,
-             bool isDirected, bool isWeighted, QGraphicsItem* parent = nullptr);
+    EdgeItem(int fromId, int toId, VertexItem* source, VertexItem* dest, double weight, bool directed, bool weighted, QGraphicsItem* parent = nullptr);
     ~EdgeItem() override;
 
-    Edge* getEdge() const { return m_edge; }
-    VertexItem* getSourceItem() const { return m_sourceItem; }
-    VertexItem* getDestItem() const { return m_destItem; }
+    int getFromId() const { return m_fromId; }
+    int getToId() const { return m_toId; }
+
+    VertexItem* sourceNode() const { return m_source; }
+    VertexItem* destNode() const { return m_dest; }
+
+    void clearSource() { m_source = nullptr; }
+    void clearDest() { m_dest = nullptr; }
+
+    void updatePosition();
+    void setWeight(double weight);
 
     void setColor(const QColor& color);
     void resetColor();
 
-    void trackVertices();
     QRectF boundingRect() const override;
     QPainterPath shape() const override;
-
-protected:
-    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
 private:
-    Edge* m_edge;
-    VertexItem* m_sourceItem;
-    VertexItem* m_destItem;
+    int m_fromId;
+    int m_toId;
+    double m_weight;
+    bool m_directed;
+    bool m_weighted;
 
-    bool m_isDirected;
-    bool m_isWeighted;
-
+    VertexItem* m_source;
+    VertexItem* m_dest;
+    QGraphicsTextItem* m_weightText;
     QColor m_defaultColor;
-    QGraphicsTextItem* m_weightLabel;
-    QColor m_currentColor;
 };
