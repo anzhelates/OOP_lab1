@@ -1,41 +1,44 @@
 #pragma once
 #include <QGraphicsScene>
-#include <QMap>
+#include <unordered_map>
 #include "VertexItem.h"
-#include "Graph.h"
+#include "EdgeItem.h"
 
-class Vertex;
-class Edge;
-class EdgeItem;
-
-using GuiGraph = Graph<Vertex, Edge>;
+struct PairHash {
+    template <class T1, class T2>
+    std::size_t operator()(const std::pair<T1, T2>& p) const {
+        auto h1 = std::hash<T1>{}(p.first);
+        auto h2 = std::hash<T2>{}(p.second);
+        return h1 ^ (h2 << 1);
+    }
+};
 
 class GraphScene : public QGraphicsScene {
     Q_OBJECT
-    public:
+public:
     explicit GraphScene(QObject* parent = nullptr);
-    ~GraphScene();
+    ~GraphScene() override;
 
-    void setGraph(GuiGraph* graph);
     void clearScene();
-    VertexItem* addVertex(Vertex* vertex);
-    EdgeItem* addEdge(Edge* edge);
-    void removeVertex(Vertex* vertex);
-    void removeEdge(Edge* edge);
 
-    VertexItem* getVertexItem(Vertex* vertex) const;
-    EdgeItem* getEdgeItem(Edge* edge) const;
+    VertexItem* addVertexItem(int id, const QString& label);
+    EdgeItem* addEdgeItem(int fromId, int toId, double weight, bool isDirected, bool isWeighted);
 
-    void resetAlgorithmStyles();
-    void updateEdgeWeights();
+    void removeVertexItem(int id);
+    void removeEdgeItem(int fromId, int toId);
+
+    VertexItem* getVertexItem(int id) const;
+    EdgeItem* getEdgeItem(int fromId, int toId) const;
+
     void applyLayout(const QMap<int, QPointF>& positions);
+    void resetAlgorithmStyles();
 
 private:
-    GuiGraph* m_graph;
-    QMap<Vertex*, VertexItem*> m_vertexItems;
-    QMap<Edge*, EdgeItem*> m_edgeItems;
+    std::unordered_map<int, VertexItem*> m_vertexItems;
+    std::unordered_map<std::pair<int, int>, EdgeItem*, PairHash> m_edgeItems;
+
     QPointF m_nextNodePos;
     int m_nodesInRow;
     static constexpr int MAX_NODES_PER_ROW = 5;
-    static constexpr qreal NODE_SPACING = 50.0;
+    static constexpr qreal NODE_SPACING = 60.0;
 };
