@@ -3,109 +3,84 @@
 #include "Vertex.h"
 #include "Edge.h"
 #include <algorithm>
+#include <memory>
 
-static Edge* makeEdge(Vertex* from, Vertex* to, double weight = 1.0) {
-    Edge* edge = new Edge(from, to, weight);
-    edge->markActive();
-    return edge;
-}
+using namespace Core;
 
-static Vertex* makeVertex(const std::string& name) {
-    return new Vertex(name);
+static std::unique_ptr<Vertex> makeVertex(const std::string& name) {
+    return std::make_unique<Vertex>(name);
 }
 
 TEST_CASE("AdjacencyMatrix: addVertex and addEdge for directed graphs") {
-    AdjacencyMatrix<Vertex, Edge> g(true);
-    Vertex* a = makeVertex("A");
-    Vertex* b = makeVertex("B");
+    AdjacencyMatrix<Vertex> g(true);
+    int aId = g.addVertex(makeVertex("A"));
+    int bId = g.addVertex(makeVertex("B"));
 
-    g.addVertex(a);
-    g.addVertex(b);
+    g.addEdge(aId, bId, 8.0);
 
-    Edge* e = makeEdge(a, b, 8.0);
-    g.addEdge(e);
+    CHECK(g.hasEdge(aId, bId));
+    CHECK(g.getEdgeWeight(aId, bId) == 8.0);
+    CHECK_FALSE(g.hasEdge(bId, aId));
 
-    CHECK(g.getEdge(a->getId(), b->getId()) == e);
-    CHECK(g.getEdge(b->getId(), a->getId()) == nullptr);
-
-    CHECK(a->isActive());
-    CHECK(b->isActive());
-    CHECK(e->isActive());
+    CHECK(g.getVertex(aId)->isActive());
+    CHECK(g.getVertex(bId)->isActive());
 }
 
 TEST_CASE("AdjacencyMatrix: addEdge and getNeighbors for undirected graphs") {
-    AdjacencyMatrix<Vertex, Edge> g(false);
-    Vertex* a = makeVertex("A");
-    Vertex* b = makeVertex("B");
+    AdjacencyMatrix<Vertex> g(false);
+    int aId = g.addVertex(makeVertex("A"));
+    int bId = g.addVertex(makeVertex("B"));
 
-    g.addVertex(a);
-    g.addVertex(b);
+    g.addEdge(aId, bId, 12.0);
 
-    Edge* e = makeEdge(a, b, 12.0);
-    g.addEdge(e);
+    CHECK(g.hasEdge(aId, bId));
+    CHECK(g.hasEdge(bId, aId));
+    CHECK(g.getEdgeWeight(aId, bId) == 12.0);
 
-    CHECK(g.getEdge(a->getId(), b->getId()) == e);
-    CHECK(g.getEdge(b->getId(), a->getId()) == e);
-
-    auto nA = g.getNeighbors(a->getId());
-    auto nB = g.getNeighbors(b->getId());
+    auto nA = g.getNeighbors(aId);
+    auto nB = g.getNeighbors(bId);
     CHECK(nA.size() == 1);
     CHECK(nB.size() == 1);
-    CHECK(nA[0] == b->getId());
-    CHECK(nB[0] == a->getId());
+    CHECK(nA[0] == bId);
+    CHECK(nB[0] == aId);
 }
 
 TEST_CASE("AdjacencyMatrix: removeEdge and removeVertex") {
-    AdjacencyMatrix<Vertex, Edge> g(false);
-    Vertex* a = makeVertex("A");
-    Vertex* b = makeVertex("B");
-    Vertex* c = makeVertex("C");
+    AdjacencyMatrix<Vertex> g(false);
+    int aId = g.addVertex(makeVertex("A"));
+    int bId = g.addVertex(makeVertex("B"));
+    int cId = g.addVertex(makeVertex("C"));
 
-    g.addVertex(a);
-    g.addVertex(b);
-    g.addVertex(c);
+    g.addEdge(aId, bId);
+    g.addEdge(bId, cId);
 
-    Edge* e1 = makeEdge(a, b);
-    Edge* e2 = makeEdge(b, c);
-    g.addEdge(e1);
-    g.addEdge(e2);
+    g.removeEdge(aId, bId);
+    CHECK_FALSE(g.hasEdge(aId, bId));
 
-    g.removeEdge(e1);
-    CHECK_FALSE(e1->isActive());
-    CHECK(g.getEdge(a->getId(), b->getId()) == nullptr);
-
-    g.removeVertex(b->getId());
-    CHECK_FALSE(b->isActive());
-    CHECK_FALSE(e2->isActive());
-    CHECK(g.getEdge(a->getId(), b->getId()) == nullptr);
-    CHECK(g.getEdge(b->getId(), c->getId()) == nullptr);
+    Vertex* bPtr = g.getVertex(bId);
+    g.removeVertex(bId);
+    CHECK_FALSE(bPtr->isActive());
+    CHECK_FALSE(g.hasEdge(bId, cId));
+    CHECK_FALSE(g.hasEdge(aId, bId));
 }
 
 TEST_CASE("AdjacencyMatrix: getNeighbors, weights sum and invalid IDs") {
-    AdjacencyMatrix<Vertex, Edge> g(true, true);
-    Vertex* a = makeVertex("A");
-    Vertex* b = makeVertex("B");
-    Vertex* c = makeVertex("C");
+    AdjacencyMatrix<Vertex> g(true, true);
+    int aId = g.addVertex(makeVertex("A"));
+    int bId = g.addVertex(makeVertex("B"));
+    int cId = g.addVertex(makeVertex("C"));
 
-    g.addVertex(a);
-    g.addVertex(b);
-    g.addVertex(c);
+    g.addEdge(aId, bId, 10.0);
+    g.addEdge(aId, cId, 20.0);
 
-    Edge* e1 = makeEdge(a, b, 10.0);
-    Edge* e2 = makeEdge(a, c, 20.0);
-    g.addEdge(e1);
-    g.addEdge(e2);
-
-    auto nA = g.getNeighbors(a->getId());
+    auto nA = g.getNeighbors(aId);
     CHECK(nA.size() == 2);
-    CHECK(std::find(nA.begin(), nA.end(), b->getId()) != nA.end());
-    CHECK(std::find(nA.begin(), nA.end(), c->getId()) != nA.end());
+    CHECK(std::find(nA.begin(), nA.end(), bId) != nA.end());
+    CHECK(std::find(nA.begin(), nA.end(), cId) != nA.end());
 
     double sum = 0;
-    for (Edge* edge : g.getEdges()) {
-        if (edge->isActive()) {
-            sum += edge->getWeight();
-        }
+    for (const auto& edge : g.getEdges()) {
+        sum += edge.getWeight();
     }
     CHECK(sum == 30.0);
 
