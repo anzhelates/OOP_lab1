@@ -1,27 +1,34 @@
 #pragma once
+#include <functional>
 
-#include "Vertex.h"
+namespace Core {
 
-class Edge {
-private:
-    Vertex* m_source;
-    Vertex* m_destination;
-    double m_weight;
-    bool m_active;
+    struct Edge {
+        int m_source = -1;
+        int m_destination = -1;
+        double m_weight = 1.0;
+        bool m_active = true;
 
-public:
-    Edge(Vertex* source, Vertex* destination, double weight = 1.0, bool active = true)
-    : m_source(source), m_destination(destination), m_weight(weight), m_active(active) {}
-    virtual ~Edge() = default;
+        Edge() = default;
+        Edge(int source, int destination, double weight = 1.0, bool active = true)
+            : m_source(source), m_destination(destination), m_weight(weight), m_active(active) {}
 
-    Vertex* getSource() const { return m_source; }
-    Vertex* getDestination() const { return m_destination; }
-    double getWeight() const { return m_weight; }
-    void setWeight(double weight) { m_weight = weight; }
-    int getFrom() const { return m_source ? m_source->getId() : -1; }
-    int getTo() const { return m_destination ? m_destination->getId() : -1; }
+        int getSource() const { return m_source; }
+        int getDestination() const { return m_destination; }
+        double getWeight() const { return m_weight; }
 
-    void markInactive() { m_active = false; }
-    void markActive() { m_active = true; }
-    bool isActive() const { return m_active; }
-};
+        void markInactive() { m_active = false; }
+        void markActive() { m_active = true; }
+        bool isActive() const { return m_active; }
+
+        bool operator==(const Edge& other) const {
+            return m_source == other.m_source && m_destination == other.m_destination;
+        }
+    };
+
+    struct EdgeHash {
+        std::size_t operator()(const Edge& e) const {
+            return std::hash<int>()(e.m_source) ^ (std::hash<int>()(e.m_destination) << 1);
+        }
+    };
+}

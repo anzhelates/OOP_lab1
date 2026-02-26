@@ -1,53 +1,39 @@
 #pragma once
-
 #include <vector>
-#include <string>
+#include <memory>
+#include "Edge.h"
+#include "Vertex.h"
+#include "GraphObserver.h"
 
-class VertexTransport;
-class EdgeTransport;
-class Vertex;
-class Edge;
+namespace Core {
 
-template <typename TVertex, typename TEdge>
-class Graph {
-protected:
-    std::vector<TVertex*> m_vertices;
-    std::vector<TEdge*> m_edges;
-    bool m_directed;
-    bool m_weighted;
+    template <typename TVertex = Vertex>
+    class Graph {
+    public:
+        virtual ~Graph() = default;
 
-public:
-    explicit Graph(bool directed = true, bool weighted = false)
-        : m_directed(directed), m_weighted(weighted) {}
+        virtual bool isDirected() const = 0;
+        virtual bool isWeighted() const = 0;
 
-    virtual ~Graph() {
-        for (auto* edge : m_edges) { delete edge; }
-        for (auto* vertex : m_vertices) { delete vertex; }
-    }
+        virtual int addVertex(std::unique_ptr<TVertex> vertex) = 0;
+        virtual void removeVertex(int id) = 0;
+        virtual void addEdge(int from, int to, double weight = 1.0) = 0;
+        virtual void removeEdge(int from, int to) = 0;
+        virtual void clear() = 0;
 
-    virtual int addVertex(TVertex* vertex) = 0;
-    virtual void addEdge(TEdge* edge) = 0;
-    virtual void removeVertex(int id) = 0;
-    virtual void removeEdge(TEdge* edge) = 0;
+        virtual bool hasVertex(int id) const = 0;
+        virtual bool hasEdge(int from, int to) const = 0;
+        virtual const TVertex* getVertex(int id) const = 0;
+        virtual TVertex* getVertex(int id) = 0;
 
-    bool isDirected() const { return m_directed; }
-    bool isWeighted() const { return m_weighted; }
+        virtual std::vector<const TVertex*> getVertices() const = 0;
+        virtual std::vector<Edge> getEdges() const = 0;
+        virtual std::vector<int> getNeighbors(int id) const = 0;
+        virtual std::vector<Edge> getEdgesFrom(int id) const = 0;
+        virtual double getEdgeWeight(int from, int to) const = 0;
+        virtual int getVertexCount() const = 0;
 
-    int getVertexCount() const { return static_cast<int>(m_vertices.size()); }
-
-    TVertex* getVertexById(int id) const {
-        if (id >= 0 && id < static_cast<int>(m_vertices.size())) {
-            if (m_vertices[id] && m_vertices[id]->isActive()) {
-                return m_vertices[id];
-            }
-        }
-        return nullptr;
-    }
-
-    virtual std::vector<int> getNeighbors(int id) const = 0;
-    virtual TEdge* getEdge(int fromId, int toId) const = 0;
-    virtual std::vector<TEdge*> getEdgesFrom(int fromId) const = 0;
-
-    const std::vector<TVertex*>& getVertices() const { return m_vertices; }
-    const std::vector<TEdge*>& getEdges() const { return m_edges; }
-};
+        virtual void addObserver(GraphObserver* observer) = 0;
+        virtual void removeObserver(GraphObserver* observer) = 0;
+    };
+}

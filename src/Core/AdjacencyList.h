@@ -1,168 +1,217 @@
 #pragma once
-
 #include "Graph.h"
-#include <list>
 #include <vector>
+#include <list>
 #include <stack>
-#include <set>
 #include <algorithm>
+#include <string>
 
-template <typename TVertex, typename TEdge>
-class AdjacencyList : public Graph<TVertex, TEdge> {
+namespace Core {
+
+template <typename TVertex = Vertex>
+class AdjacencyList : public Graph<TVertex> {
 private:
-    struct AdjEntry {
-        int m_to;
-        TEdge* m_edge;
-        AdjEntry(int to, TEdge* edge) : m_to(to), m_edge(edge) {}
-    };
-
-    std::vector<std::list<AdjEntry>> m_adjList;
+    bool m_directed;
+    bool m_weighted;
+    std::vector<std::unique_ptr<TVertex>> m_vertices;
+    std::vector<std::list<Edge>> m_adjList;
     std::stack<int> m_freeIds;
+    std::vector<GraphObserver*> m_observers;
+
+    void notifyVertexAdded(int id) { for (auto obs : m_observers) obs->onVertexAdded(id); }
+    void notifyVertexRemoved(int id) { for (auto obs : m_observers) obs->onVertexRemoved(id); }
+    void notifyEdgeAdded(int from, int to, double weight) { for (auto obs : m_observers) obs->onEdgeAdded(from, to, weight); }
+    void notifyEdgeRemoved(int from, int to) { for (auto obs : m_observers) obs->onEdgeRemoved(from, to); }
 
 public:
-    explicit AdjacencyList(bool directed = true, bool weighted = false)
-        : Graph<TVertex, TEdge>(directed, weighted) {}
+    explicit AdjacencyList(bool directed = true, bool weighted = true)
+        : m_directed(directed), m_weighted(weighted) {}
 
-    ~AdjacencyList() override = default;
+    bool isDirected() const override { return m_directed; }
+    bool isWeighted() const override { return m_weighted; }
 
-    int addVertex(TVertex* vertex) override {
+    bool hasVertex(int id) const override {
+        return id >= 0 && id < m_vertices.size() && m_vertices[id] && m_vertices[id]->isActive();
+    }
+
+    int addVertex(std::unique_ptr<TVertex> vertex) override {
         if (!vertex) return -1;
-
         int id;
         if (!m_freeIds.empty()) {
             id = m_freeIds.top();
             m_freeIds.pop();
-            if(this->m_vertices[id]) delete this->m_vertices[id];
-            this->m_vertices[id] = vertex;
+            vertex->setId(id);
+            vertex->markActive();
+            m_vertices[id] = std::move(vertex);
             m_adjList[id].clear();
         } else {
-            id = static_cast<int>(this->m_vertices.size());
-            this->m_vertices.push_back(vertex);
-            m_adjList.resize(this->m_vertices.size());
+            id = static_cast<int>(m_vertices.size());
+            vertex->setId(id);
+            vertex->markActive();
+            m_vertices.push_back(std::move(vertex));
+            m_adjList.emplace_back();
         }
 
-        vertex->setId(id);
-        vertex->markActive();
+        if (m_vertices[id]->getName().empty()) {
+            m_vertices[id]->setName(std::to_string(id));
+        }
+
+        notifyVertexAdded(id);
         return id;
     }
 
-    void addEdge(TEdge* edge) override {
-        if (!edge || !edge->getSource() || !edge->getDestination()) return;
-
-        int from = edge->getSource()->getId();
-        int to = edge->getDestination()->getId();
-
-        if (from < 0 || from >= static_cast<int>(this->m_vertices.size()) ||
-            to < 0 || to >= static_cast<int>(this->m_vertices.size())) {
-            return;
-        }
-
-        if (!this->m_vertices[from]->isActive() || !this->m_vertices[to]->isActive()) {
-            return;
-        }
-
-        edge->markActive();
-        this->m_edges.push_back(edge);
-
-        m_adjList[from].push_back(AdjEntry(to, edge));
-        if (!this->m_directed) {
-            m_adjList[to].push_back(AdjEntry(from, edge));
-        }
-    }
-
-    void removeEdge(TEdge* edge) override {
-        if (!edge || !edge->getSource() || !edge->getDestination()) return;
-
-        int from = edge->getFrom();
-        int to = edge->getTo();
-
-        if (from >= 0 && from < static_cast<int>(m_adjList.size())) {
-            m_adjList[from].remove_if([edge](const AdjEntry& entry) {
-                return entry.m_edge == edge;
-            });
-        }
-        if (!this->m_directed && to >= 0 && to < static_cast<int>(m_adjList.size())) {
-             m_adjList[to].remove_if([edge](const AdjEntry& entry) {
-                return entry.m_edge == edge;
-            });
-        }
-        edge->markInactive();
-    }
-
     void removeVertex(int id) override {
-        if (id < 0 || id >= static_cast<int>(this->m_vertices.size()) ||
-            !this->m_vertices[id] || !this->m_vertices[id]->isActive()) {
-            return;
+        if (!hasVertex(id)) return;
+        m_vertices[id]->markInactive();
+
+        std::vector<int> to_remove_out;
+        for (const auto& edge : m_adjList[id]) {
+            if (edge.isActive()) to_remove_out.push_back(edge.m_destination);
+        }
+        for (int to_id : to_remove_out) {
+            removeEdge(id, to_id);
+        }
+
+        for (int i = 0; i < m_adjList.size(); ++i) {
+            if (i == id || !hasVertex(i)) continue;
+            std::vector<int> to_remove_in;
+            for (const auto& edge : m_adjList[i]) {
+                if (edge.m_destination == id && edge.isActive()) {
+                    to_remove_in.push_back(i);
+                }
             }
-
-        std::set<TEdge*> edgesToRemove;
-
-        for (const auto& entry : m_adjList[id]) {
-            if (entry.m_edge) {
-                edgesToRemove.insert(entry.m_edge);
+            for (int from_id : to_remove_in) {
+                removeEdge(from_id, id);
             }
         }
-        m_adjList[id].clear();
 
-        for (int i = 0; i < static_cast<int>(m_adjList.size()); ++i) {
-            if (i == id) continue;
+        m_freeIds.push(id);
+        notifyVertexRemoved(id);
+    }
 
-            for (auto it = m_adjList[i].begin(); it != m_adjList[i].end();) {
-                if (it->m_to == id) {
-                    if (it->m_edge) edgesToRemove.insert(it->m_edge);
-                    it = m_adjList[i].erase(it);
-                } else {
-                    ++it;
+    void addEdge(int from, int to, double weight = 1.0) override {
+        if (!hasVertex(from) || !hasVertex(to)) return;
+        if (hasEdge(from, to)) return;
+        if (!m_weighted) weight = 1.0;
+
+        m_adjList[from].emplace_back(from, to, weight, true);
+        notifyEdgeAdded(from, to, weight);
+        if (!m_directed && from != to) {
+            m_adjList[to].emplace_back(to, from, weight, true);
+            notifyEdgeAdded(to, from, weight);
+        }
+    }
+
+    void removeEdge(int from, int to) override {
+        if (from < 0 || from >= m_adjList.size()) return;
+
+        bool removed = false;
+        for (auto& edge : m_adjList[from]) {
+            if (edge.m_destination == to && edge.isActive()) {
+                edge.markInactive();
+                removed = true;
+                break;
+            }
+        }
+        if (removed) {
+            notifyEdgeRemoved(from, to);
+        }
+
+        if (!m_directed && from != to && to < m_adjList.size()) {
+            bool removedRev = false;
+            for (auto& edge : m_adjList[to]) {
+                if (edge.m_destination == from && edge.isActive()) {
+                    edge.markInactive();
+                    removedRev = true;
+                    break;
+                }
+            }
+            if (removedRev) {
+                notifyEdgeRemoved(to, from);
+            }
+        }
+    }
+
+    bool hasEdge(int from, int to) const override {
+        if (!hasVertex(from) || !hasVertex(to)) return false;
+        for (const auto& edge : m_adjList[from]) {
+            if (edge.m_destination == to && edge.isActive()) return true;
+        }
+        return false;
+    }
+
+    const TVertex* getVertex(int id) const override {
+        if (hasVertex(id)) return m_vertices[id].get();
+        return nullptr;
+    }
+
+    TVertex* getVertex(int id) override {
+        if (hasVertex(id)) return m_vertices[id].get();
+        return nullptr;
+    }
+
+    std::vector<const TVertex*> getVertices() const override {
+        std::vector<const TVertex*> active;
+        for (const auto& v : m_vertices) {
+            if (v && v->isActive()) active.push_back(v.get());
+        }
+        return active;
+    }
+
+    std::vector<Edge> getEdges() const override {
+        std::vector<Edge> edges;
+        for (int i = 0; i < m_adjList.size(); ++i) {
+            if (!hasVertex(i)) continue;
+            for (const auto& edge : m_adjList[i]) {
+                if (edge.isActive() && hasVertex(edge.m_destination)) {
+                    if (!m_directed && edge.m_source > edge.m_destination) continue;
+                    edges.push_back(edge);
                 }
             }
         }
-
-        for (TEdge* edge : edgesToRemove) {
-            removeEdge(edge);
-        }
-        this->m_vertices[id]->markInactive();
-        m_freeIds.push(id);
+        return edges;
     }
 
     std::vector<int> getNeighbors(int id) const override {
         std::vector<int> neighbors;
-        if (id >= 0 && id < static_cast<int>(m_adjList.size()) && this->m_vertices[id]->isActive()) {
-            for (const auto& entry : m_adjList[id]) {
-                if (entry.m_edge && entry.m_edge->isActive() &&
-                    this->m_vertices[entry.m_to] && this->m_vertices[entry.m_to]->isActive()) {
-                    neighbors.push_back(entry.m_to);
-                }
+        if (hasVertex(id)) {
+            for (const auto& edge : m_adjList[id]) {
+                if (edge.isActive() && hasVertex(edge.m_destination)) neighbors.push_back(edge.m_destination);
             }
         }
         return neighbors;
     }
 
-    TEdge* getEdge(int fromId, int toId) const override {
-        if (fromId >= 0 && fromId < static_cast<int>(m_adjList.size())) {
-            for (const auto& entry : m_adjList[fromId]) {
-                if (entry.m_to == toId && entry.m_edge && entry.m_edge->isActive()) {
-                     if (this->m_vertices[fromId] && this->m_vertices[fromId]->isActive() &&
-                        this->m_vertices[toId] && this->m_vertices[toId]->isActive())
-                    {
-                         return entry.m_edge;
-                    }
-                }
+    std::vector<Edge> getEdgesFrom(int id) const override {
+        std::vector<Edge> edges;
+        if (hasVertex(id)) {
+            for (const auto& edge : m_adjList[id]) {
+                if (edge.isActive() && hasVertex(edge.m_destination)) edges.push_back(edge);
             }
         }
-        return nullptr;
+        return edges;
     }
 
-    std::vector<TEdge*> getEdgesFrom(int fromId) const override {
-        std::vector<TEdge*> result;
-        if (fromId >= 0 && fromId < static_cast<int>(m_adjList.size()) && this->m_vertices[fromId]->isActive()) {
-            for (const auto& entry : this->m_adjList[fromId]) {
-                if (entry.m_edge && entry.m_edge->isActive() &&
-                    this->m_vertices[entry.m_to] && this->m_vertices[entry.m_to]->isActive())
-                {
-                    result.push_back(entry.m_edge);
-                }
-            }
+    double getEdgeWeight(int from, int to) const override {
+        if (!hasVertex(from) || !hasVertex(to)) return std::numeric_limits<double>::infinity();
+        for (const auto& edge : m_adjList[from]) {
+            if (edge.m_destination == to && edge.isActive()) return edge.m_weight;
         }
-        return result;
+        return 1.0;
+    }
+
+    void clear() override {
+        m_vertices.clear();
+        m_adjList.clear();
+        while (!m_freeIds.empty()) m_freeIds.pop();
+        for (auto obs : m_observers) obs->onGraphCleared();
+    }
+
+    int getVertexCount() const override { return m_vertices.size(); }
+
+    void addObserver(GraphObserver* observer) override { if (observer) m_observers.push_back(observer); }
+    void removeObserver(GraphObserver* observer) override {
+        m_observers.erase(std::remove(m_observers.begin(), m_observers.end(), observer), m_observers.end());
     }
 };
+}
