@@ -1,8 +1,8 @@
 #include "GraphvizEngine.h"
+#include "Edge.h"
 #include <graphviz/gvc.h>
 #include <graphviz/cgraph.h>
 #include <QDebug>
-#include <vector>
 
 static const double GV_TO_QT_SCALE = 1.0;
 
@@ -14,9 +14,7 @@ GraphvizEngine::GraphvizEngine() {
 }
 
 GraphvizEngine::~GraphvizEngine() {
-    if (m_gvc) {
-        gvFreeContext(m_gvc);
-    }
+    if (m_gvc) gvFreeContext(m_gvc);
 }
 
 std::string GraphvizEngine::getLayoutAlgoString(LayoutAlgorithm algo) {
@@ -31,45 +29,43 @@ GraphvizEngine::LayoutAlgorithm GraphvizEngine::getDefaultLayoutAlgorithm(bool d
     return directed ? LayoutAlgorithm::DOT : LayoutAlgorithm::NEATO;
 }
 
-Agraph_t* GraphvizEngine::createGvGraph(GVGraph* graph) {
+Agraph_t* GraphvizEngine::createGvGraph(const Core::Graph<Core::Vertex>* graph) {
     if (!graph) return nullptr;
 
     Agraph_t* g = agopen(const_cast<char*>("G"),
                          graph->isDirected() ? Agdirected : Agundirected,
                          nullptr);
 
+    agattr(g, AGRAPH, const_cast<char*>("rankdir"), const_cast<char*>("TB"));
+    agattr(g, AGRAPH, const_cast<char*>("ordering"), const_cast<char*>("out"));
+
     agattr(g, AGNODE, const_cast<char*>("shape"), const_cast<char*>("circle"));
     agattr(g, AGNODE, const_cast<char*>("fixedsize"), const_cast<char*>("true"));
     agattr(g, AGNODE, const_cast<char*>("width"), const_cast<char*>("0.5"));
     agattr(g, AGNODE, const_cast<char*>("style"), const_cast<char*>("filled"));
     agattr(g, AGNODE, const_cast<char*>("fillcolor"), const_cast<char*>("cyan"));
-
     agattr(g, AGEDGE, const_cast<char*>("color"), const_cast<char*>("black"));
 
     QMap<int, Agnode_t*> vertexMap;
 
-    for (Vertex* v : graph->getVertices()) {
+    for (const auto* v : graph->getVertices()) {
         if (v && v->isActive()) {
             std::string s_id = std::to_string(v->getId());
             Agnode_t* n = agnode(g, const_cast<char*>(s_id.c_str()), 1);
-
-            std::string s_name = v->getName();
-            agsafeset(n, const_cast<char*>("label"), const_cast<char*>(s_name.c_str()), const_cast<char*>(""));
-
+            agsafeset(n, const_cast<char*>("label"), const_cast<char*>(v->getName().c_str()), const_cast<char*>(""));
             vertexMap[v->getId()] = n;
         }
     }
 
-    for (Edge* e : graph->getEdges()) {
-        if (e && e->isActive()) {
-            Agnode_t* src = vertexMap.value(e->getFrom(), nullptr);
-            Agnode_t* dst = vertexMap.value(e->getTo(), nullptr);
+    for (const auto& e : graph->getEdges()) {
+        if (e.isActive()) {
+            Agnode_t* src = vertexMap.value(e.getSource(), nullptr);
+            Agnode_t* dst = vertexMap.value(e.getDestination(), nullptr);
 
             if (src && dst) {
                 Agedge_t* edge = agedge(g, src, dst, nullptr, 1);
-
                 if (graph->isWeighted()) {
-                    std::string s_weight = QString::number(e->getWeight(), 'f', 1).toStdString();
+                    std::string s_weight = QString::number(e.getWeight(), 'f', 1).toStdString();
                     agsafeset(edge, const_cast<char*>("label"), const_cast<char*>(s_weight.c_str()), const_cast<char*>(""));
                 }
             }
@@ -78,7 +74,7 @@ Agraph_t* GraphvizEngine::createGvGraph(GVGraph* graph) {
     return g;
 }
 
-QMap<int, QPointF> GraphvizEngine::layoutGraph(GVGraph* graph, LayoutAlgorithm algo) {
+QMap<int, QPointF> GraphvizEngine::layoutGraph(const Core::Graph<Core::Vertex>* graph, LayoutAlgorithm algo) {
     QMap<int, QPointF> positions;
     if (!m_gvc || !graph) return positions;
 
@@ -101,8 +97,7 @@ QMap<int, QPointF> GraphvizEngine::layoutGraph(GVGraph* graph, LayoutAlgorithm a
 
             int id = std::stoi(agnameof(n));
             positions[id] = pos;
-        } catch (...) {
-        }
+        } catch (...) {}
     }
 
     gvFreeLayout(m_gvc, g);
@@ -110,14 +105,13 @@ QMap<int, QPointF> GraphvizEngine::layoutGraph(GVGraph* graph, LayoutAlgorithm a
     return positions;
 }
 
-bool GraphvizEngine::exportToFile(GVGraph* graph, const QString& filePath, const QString& format, LayoutAlgorithm algo) {
+bool GraphvizEngine::exportToFile(const Core::Graph<Core::Vertex>* graph, const QString& filePath, const QString& format, LayoutAlgorithm algo) {
     if (!m_gvc || !graph) return false;
 
     Agraph_t* g = createGvGraph(graph);
     if (!g) return false;
 
     std::string algoStr = getLayoutAlgoString(algo);
-
     if (gvLayout(m_gvc, g, algoStr.c_str()) != 0) {
         agclose(g);
         return false;
