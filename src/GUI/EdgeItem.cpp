@@ -1,3 +1,7 @@
+/**
+ * @file EdgeItem.cpp
+ * @brief Implementation of the EdgeItem class representing a graphical graph edge.
+ */
 #include "EdgeItem.h"
 #include "VertexItem.h"
 #include <QPainter>

@@ -1,3 +1,7 @@
+/**
+ * @file ControlPanel.cpp
+ * @brief Implementation of the ControlPanel class.
+ */
 #include "ControlPanel.h"
 #include "ui_ControlPanel.h"
 #include <QPushButton>

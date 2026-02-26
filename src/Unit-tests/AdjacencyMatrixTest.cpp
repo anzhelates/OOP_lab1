@@ -1,3 +1,8 @@
+/**
+ * @file AdjacencyMatrixTest.cpp
+ * @brief Unit tests for the AdjacencyMatrix class.
+ */
+
 #include "doctest.h"
 #include "AdjacencyMatrix.h"
 #include "Vertex.h"
@@ -7,10 +12,18 @@
 
 using namespace Core;
 
+/**
+ * @brief Helper function to create a dynamically allocated Vertex.
+ * @param name The string representation of the vertex name.
+ * @return std::unique_ptr<Vertex> containing the created vertex.
+ */
 static std::unique_ptr<Vertex> makeVertex(const std::string& name) {
     return std::make_unique<Vertex>(name);
 }
 
+/**
+ * @brief Tests basic construction and connectivity in a directed matrix context.
+ */
 TEST_CASE("AdjacencyMatrix: addVertex and addEdge for directed graphs") {
     AdjacencyMatrix<Vertex> g(true);
     int aId = g.addVertex(makeVertex("A"));
@@ -26,6 +39,9 @@ TEST_CASE("AdjacencyMatrix: addVertex and addEdge for directed graphs") {
     CHECK(g.getVertex(bId)->isActive());
 }
 
+/**
+ * @brief Tests symmetric connectivity and neighbor querying in an undirected matrix.
+ */
 TEST_CASE("AdjacencyMatrix: addEdge and getNeighbors for undirected graphs") {
     AdjacencyMatrix<Vertex> g(false);
     int aId = g.addVertex(makeVertex("A"));
@@ -45,6 +61,9 @@ TEST_CASE("AdjacencyMatrix: addEdge and getNeighbors for undirected graphs") {
     CHECK(nB[0] == aId);
 }
 
+/**
+ * @brief Validates removal logic for edges and vertices in an AdjacencyMatrix.
+ */
 TEST_CASE("AdjacencyMatrix: removeEdge and removeVertex") {
     AdjacencyMatrix<Vertex> g(false);
     int aId = g.addVertex(makeVertex("A"));
@@ -64,6 +83,9 @@ TEST_CASE("AdjacencyMatrix: removeEdge and removeVertex") {
     CHECK_FALSE(g.hasEdge(aId, bId));
 }
 
+/**
+ * @brief Confirms neighbor fetching counts correctly, sums weights, and ignores invalid IDs.
+ */
 TEST_CASE("AdjacencyMatrix: getNeighbors, weights sum and invalid IDs") {
     AdjacencyMatrix<Vertex> g(true, true);
     int aId = g.addVertex(makeVertex("A"));

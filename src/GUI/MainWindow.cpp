@@ -1,3 +1,8 @@
+/**
+ * @file MainWindow.cpp
+ * @brief Implementation of the MainWindow class for the Algorithm Visualiser.
+ */
+
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "ControlPanel.h"
@@ -26,7 +31,6 @@ MainWindow::MainWindow(QWidget* parent)
       m_playSpeedMs(1000)
 {
     ui->setupUi(this);
-
     QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     m_currentExportDir = desktopPath + QDir::separator() + "ExportedGraphs";
 
@@ -44,7 +48,6 @@ MainWindow::MainWindow(QWidget* parent)
     m_graphicsView->setInteractive(true);
     m_graphicsView->setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
     m_graphicsView->centerOn(0, 0);
-
     m_algoController = std::make_unique<AlgorithmController<Vertex>>();
     m_playTimer = new QTimer(this);
     m_graphvizEngine = std::make_unique<GraphvizEngine>();

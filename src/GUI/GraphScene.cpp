@@ -1,3 +1,7 @@
+/**
+ * @file GraphScene.cpp
+ * @brief Implementation of the GraphScene class to manage visual elements.
+ */
 #include "GraphScene.h"
 
 GraphScene::GraphScene(QObject* parent)

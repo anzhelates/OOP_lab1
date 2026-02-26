@@ -1,3 +1,8 @@
+/**
+* @file DFS.h
+ * @brief Depth-First Search algorithm
+ */
+
 #pragma once
 #include "Algorithm.h"
 #include <stack>
@@ -5,9 +10,23 @@
 
 namespace Algorithms {
 
+/**
+ * @brief Implements the Depth-First Search (DFS) algorithm.
+ * * @tparam TVertex The vertex type used in the graph. Defaults to Core::Vertex.
+ */
 template<typename TVertex = Core::Vertex>
 class DFS : public Algorithm<TVertex> {
 public:
+    /**
+     * @brief Runs the DFS algorithm on the given graph.
+     * * @param graph Pointer to the graph to traverse.
+     * @param startId The ID of the starting vertex.
+     * @param endId The ID of the target vertex. Traversal stops early if this is reached.
+     * @param vertexCb Callback invoked during vertex state changes.
+     * @param edgeCb Callback invoked during edge state changes.
+     * @return true If the algorithm completed without initialization errors.
+     * @return false If the graph is null or startId does not exist.
+     */
     bool run(const Core::Graph<TVertex>* graph, int startId, int endId,
              typename Algorithm<TVertex>::VertexCallback vertexCb,
              typename Algorithm<TVertex>::EdgeCallback edgeCb) override
@@ -52,11 +71,16 @@ public:
         return true;
     }
 
+    /**
+     * @brief Checks if the DFS algorithm has completed execution.
+     * * @return true If the execution has finished.
+     * @return false Otherwise.
+     */
     bool isFinished() const override { return m_finished; }
 
 private:
-    bool m_finished = false;
-    std::vector<bool> m_visited;
-    std::stack<int> m_stack;
+    bool m_finished = false;         ///< Flag indicating whether the algorithm has completed.
+    std::vector<bool> m_visited;     ///< Tracks which vertices have been visited to prevent processing duplicates.
+    std::stack<int> m_stack;         ///< Stack used to maintain the DFS frontier.
 };
 }

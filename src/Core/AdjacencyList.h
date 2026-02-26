@@ -1,3 +1,8 @@
+/**
+* @file AdjacencyList.h
+ * @brief Graph representation where each vertex stores a list of its adjacent vertices.
+ */
+
 #pragma once
 #include "Graph.h"
 #include <vector>
@@ -8,22 +13,53 @@
 
 namespace Core {
 
+/**
+ * @brief Graph implementation using an adjacency list.
+ * @tparam TVertex The type of vertex used in the graph, defaults to Core::Vertex.
+ */
 template <typename TVertex = Vertex>
 class AdjacencyList : public Graph<TVertex> {
 private:
-    bool m_directed;
-    bool m_weighted;
-    std::vector<std::unique_ptr<TVertex>> m_vertices;
-    std::vector<std::list<Edge>> m_adjList;
-    std::stack<int> m_freeIds;
-    std::vector<GraphObserver*> m_observers;
+    bool m_directed;                                      ///< True if the graph is directed.
+    bool m_weighted;                                      ///< True if the graph is weighted.
+    std::vector<std::unique_ptr<TVertex>> m_vertices;     ///< Container for vertices.
+    std::vector<std::list<Edge>> m_adjList;               ///< The adjacency list storing edges for each vertex.
+    std::stack<int> m_freeIds;                            ///< Stack of freed IDs ready for reuse.
+    std::vector<GraphObserver*> m_observers;              ///< List of registered graph observers.
 
+    /**
+     * @brief Notifies observers that a vertex was added.
+     * @param id The ID of the added vertex.
+     */
     void notifyVertexAdded(int id) { for (auto obs : m_observers) obs->onVertexAdded(id); }
+
+    /**
+     * @brief Notifies observers that a vertex was removed.
+     * @param id The ID of the removed vertex.
+     */
     void notifyVertexRemoved(int id) { for (auto obs : m_observers) obs->onVertexRemoved(id); }
+
+    /**
+     * @brief Notifies observers that an edge was added.
+     * @param from The source vertex ID.
+     * @param to The destination vertex ID.
+     * @param weight The weight of the edge.
+     */
     void notifyEdgeAdded(int from, int to, double weight) { for (auto obs : m_observers) obs->onEdgeAdded(from, to, weight); }
+
+    /**
+     * @brief Notifies observers that an edge was removed.
+     * @param from The source vertex ID.
+     * @param to The destination vertex ID.
+     */
     void notifyEdgeRemoved(int from, int to) { for (auto obs : m_observers) obs->onEdgeRemoved(from, to); }
 
 public:
+    /**
+     * @brief Constructor for AdjacencyList.
+     * @param directed True if the graph should be directed (default is true).
+     * @param weighted True if the graph edges have weights (default is true).
+     */
     explicit AdjacencyList(bool directed = true, bool weighted = true)
         : m_directed(directed), m_weighted(weighted) {}
 

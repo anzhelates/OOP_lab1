@@ -1,3 +1,8 @@
+/**
+* @file AdjacencyMatrix.h
+ * @brief Graph representation using a 2D matrix to indicate edge connections between vertices.
+ */
+
 #pragma once
 #include "Graph.h"
 #include <vector>
@@ -7,23 +12,58 @@
 
 namespace Core {
 
+/**
+ * @brief Graph implementation using an adjacency matrix.
+ * @tparam TVertex The type of vertex used in the graph.
+ */
 template <typename TVertex>
 class AdjacencyMatrix : public Graph<TVertex> {
 private:
-    bool m_directed;
-    bool m_weighted;
-    std::vector<std::unique_ptr<TVertex>> m_vertices;
-    std::vector<std::vector<std::optional<double>>> m_matrix;
-    std::stack<int> m_freeIds;
-    std::vector<GraphObserver*> m_observers;
+    bool m_directed;                                                 ///< True if the graph is directed.
+    bool m_weighted;                                                 ///< True if the graph is weighted.
+    std::vector<std::unique_ptr<TVertex>> m_vertices;                ///< Container for vertices.
+    std::vector<std::vector<std::optional<double>>> m_matrix;        ///< 2D matrix storing edge weights.
+    std::stack<int> m_freeIds;                                       ///< Stack of freed IDs ready for reuse.
+    std::vector<GraphObserver*> m_observers;                         ///< List of registered graph observers.
 
+    /**
+     * @brief Notifies observers that a vertex was added.
+     * @param id The ID of the added vertex.
+     */
     void notifyVertexAdded(int id) { for (auto obs : m_observers) obs->onVertexAdded(id); }
+
+    /**
+     * @brief Notifies observers that a vertex was removed.
+     * @param id The ID of the removed vertex.
+     */
     void notifyVertexRemoved(int id) { for (auto obs : m_observers) obs->onVertexRemoved(id); }
+
+    /**
+     * @brief Notifies observers that an edge was added.
+     * @param from The source vertex ID.
+     * @param to The destination vertex ID.
+     * @param weight The weight of the edge.
+     */
     void notifyEdgeAdded(int from, int to, double weight) { for (auto obs : m_observers) obs->onEdgeAdded(from, to, weight); }
+
+    /**
+     * @brief Notifies observers that an edge was removed.
+     * @param from The source vertex ID.
+     * @param to The destination vertex ID.
+     */
     void notifyEdgeRemoved(int from, int to) { for (auto obs : m_observers) obs->onEdgeRemoved(from, to); }
+
+    /**
+     * @brief Notifies observers that the graph was completely cleared.
+     */
     void notifyGraphCleared() { for (auto obs : m_observers) obs->onGraphCleared(); }
 
 public:
+    /**
+     * @brief Constructor for AdjacencyMatrix.
+     * @param directed True if the graph should be directed (default is true).
+     * @param weighted True if the graph edges have weights (default is true).
+     */
     explicit AdjacencyMatrix(bool directed = true, bool weighted = true)
         : m_directed(directed), m_weighted(weighted) {}
 

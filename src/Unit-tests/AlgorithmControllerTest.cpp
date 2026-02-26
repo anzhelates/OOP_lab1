@@ -1,3 +1,8 @@
+/**
+ * @file AlgorithmControllerTest.cpp
+ * @brief Unit tests for the AlgorithmController.
+ */
+
 #include "doctest.h"
 #include "AlgorithmController.h"
 #include "AdjacencyList.h"
@@ -8,7 +13,13 @@
 using namespace Core;
 using namespace Algorithms;
 
+/**
+ * @brief Test suite evaluating the initialization constraints of the AlgorithmController.
+ */
 TEST_SUITE("AlgorithmController: initialization") {
+    /**
+     * @brief Ensures starting an algorithm with a non-existent vertex fails gracefully.
+     */
     TEST_CASE("Start with invalid vertex ID should return false") {
         AdjacencyList<Vertex> g(false);
         int idA = g.addVertex(std::make_unique<Vertex>("A"));
@@ -21,6 +32,9 @@ TEST_SUITE("AlgorithmController: initialization") {
         CHECK(started == false);
     }
 
+    /**
+     * @brief Ensures starting an algorithm on an entirely unpopulated graph fails.
+     */
     TEST_CASE("Start on empty graph should fail") {
         AdjacencyList<Vertex> g;
         AlgorithmController<Vertex> controller;
@@ -31,7 +45,13 @@ TEST_SUITE("AlgorithmController: initialization") {
     }
 }
 
+/**
+ * @brief Test suite focused on Breadth-First Search step mechanics.
+ */
 TEST_SUITE("AlgorithmController: BFS Stepping") {
+    /**
+     * @brief Tests the step-by-step state accumulation logic during a BFS traversal.
+     */
     TEST_CASE("BFS step-by-Step State tracking") {
         AdjacencyList<Vertex> g(false);
         int a = g.addVertex(std::make_unique<Vertex>("A"));
@@ -65,7 +85,12 @@ TEST_SUITE("AlgorithmController: BFS Stepping") {
     }
 }
 
+/**
+ * @brief Test suite covering Dijkstra's shortest path algorithm step tracking.  */
 TEST_SUITE("AlgorithmController: Dijkstra's algorithm") {
+    /**
+     * @brief Validates that Dijkstra correctly reconstructs the final shortest path trace.
+     */
     TEST_CASE("Dijkstra finds and reconstructs the correct path") {
         AdjacencyList<Vertex> g(false, true);
         int a = g.addVertex(std::make_unique<Vertex>("A"));
@@ -93,7 +118,13 @@ TEST_SUITE("AlgorithmController: Dijkstra's algorithm") {
     }
 }
 
+/**
+ * @brief Test suite evaluating reverse step mechanics (undo/redo).
+ */
 TEST_SUITE("AlgorithmController: history navigation") {
+    /**
+     * @brief Confirms that traversing states backward returns the application to the precise prior state.
+     */
     TEST_CASE("Forward and backward consistency") {
         AdjacencyList<Vertex> g(false);
         int a = g.addVertex(std::make_unique<Vertex>("A"));

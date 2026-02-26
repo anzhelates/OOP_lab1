@@ -1,3 +1,8 @@
+/**
+* @file AlgorithmController.h
+ * @brief Manages execution and step-by-step control of graph algorithms.
+ */
+
 #pragma once
 #include "Algorithm.h"
 #include "BFS.h"
@@ -12,18 +17,58 @@
 
 namespace Algorithms {
 
+    /**
+     * @brief Enumeration of available graph algorithms.
+     */
     enum class AlgorithmType {BFS, DFS, Dijkstra};
 
+    /**
+     * @brief Controls the execution and state management of graph algorithms.
+     * * This class acts as a facade to run algorithms, collect their execution steps,
+     * and allow stepping through the states backwards and forwards.
+     * * @tparam TVertex The vertex type used in the graph. Defaults to Core::Vertex.
+     */
     template<typename TVertex = Core::Vertex>
     class AlgorithmController {
     public:
+        /**
+         * @brief Default constructor.
+         */
         AlgorithmController() = default;
 
+        /**
+         * @brief Sets the graph instance to be used by the algorithms.
+         * * @param graph Pointer to the target graph.
+         */
         void setGraph(const Core::Graph<TVertex>* graph) { m_graph = graph; }
+
+        /**
+         * @brief Gets the currently selected algorithm type.
+         * * @return AlgorithmType The current algorithm type.
+         */
         AlgorithmType getAlgorithm() const { return m_type; }
+
+        /**
+         * @brief Sets the algorithm type to be executed.
+         * * @param type The desired algorithm type.
+         */
         void setAlgorithm(AlgorithmType type) { m_type = type; }
+
+        /**
+         * @brief Gets the current step index of the algorithm's execution history.
+         * * @return int The current step index.
+         */
         int getCurrentStep() const { return m_currentStep; }
 
+        /**
+         * @brief Starts the execution of the selected algorithm.
+         * * This method runs the algorithm entirely and records its states at every step using callbacks.
+         * * @param startId The ID of the starting vertex.
+         * @param endId The ID of the target vertex.
+         * @param outInitialState Reference to an AlgoState variable that will receive the very first recorded state.
+         * @return true If the algorithm was successfully executed and at least one state was recorded.
+         * @return false If the setup is invalid or execution failed.
+         */
         bool start(int startId, int endId, AlgoState& outInitialState) {
             m_states.clear();
             m_currentStep = 0;
@@ -73,6 +118,12 @@ namespace Algorithms {
             return success;
         }
 
+        /**
+         * @brief Advances to the next recorded state of the algorithm.
+         * * @param outState Reference to an AlgoState variable that will receive the next state.
+         * @return true If moved to the next step successfully.
+         * @return false If already at the last step.
+         */
         bool nextStep(AlgoState& outState) {
             if (m_currentStep < static_cast<int>(m_states.size()) - 1) {
                 m_currentStep++;
@@ -83,6 +134,12 @@ namespace Algorithms {
             return false;
         }
 
+        /**
+         * @brief Retreats to the previous recorded state of the algorithm.
+         * * @param outState Reference to an AlgoState variable that will receive the previous state.
+         * @return true If moved to the previous step successfully.
+         * @return false If already at the first step.
+         */
         bool prevStep(AlgoState& outState) {
             if (m_currentStep > 0) {
                 m_currentStep--;
@@ -93,15 +150,18 @@ namespace Algorithms {
             return false;
         }
 
+        /**
+         * @brief Resets the controller, clearing all recorded states and resetting the current step.
+         */
         void reset() {
             m_states.clear();
             m_currentStep = 0;
         }
 
     private:
-        const Core::Graph<TVertex>* m_graph = nullptr;
-        std::vector<AlgoState> m_states;
-        int m_currentStep = 0;
-        AlgorithmType m_type = AlgorithmType::BFS;
+        const Core::Graph<TVertex>* m_graph = nullptr; ///< Pointer to the graph instance.
+        std::vector<AlgoState> m_states;               ///< Collection of all states recorded during algorithm execution.
+        int m_currentStep = 0;                         ///< The current index within the recorded states.
+        AlgorithmType m_type = AlgorithmType::BFS;     ///< The selected algorithm type.
     };
 }

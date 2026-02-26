@@ -1,3 +1,8 @@
+/**
+ * @file AdjacencyListTest.cpp
+ * @brief Unit tests for the AdjacencyList class.
+ */
+
 #include "doctest.h"
 #include "AdjacencyList.h"
 #include "Vertex.h"
@@ -7,10 +12,18 @@
 
 using namespace Core;
 
+/**
+ * @brief Helper function to create a dynamically allocated Vertex.
+ * @param name The string representation of the vertex name.
+ * @return std::unique_ptr<Vertex> containing the created vertex.
+ */
 static std::unique_ptr<Vertex> makeVertex(const std::string& name) {
     return std::make_unique<Vertex>(name);
 }
 
+/**
+ * @brief Tests basic vertex operations like adding and verifying IDs within the AdjacencyList.
+ */
 TEST_CASE("AdjacencyList: basic vertex operations") {
     AdjacencyList<Vertex> g(false);
 
@@ -27,6 +40,9 @@ TEST_CASE("AdjacencyList: basic vertex operations") {
     CHECK(g.getVertex(id2)->isActive());
 }
 
+/**
+ * @brief Tests operations concerning edges in an undirected graph context.
+ */
 TEST_CASE("AdjacencyList: undirected graph edge operations") {
     AdjacencyList<Vertex> g(false);
 
@@ -36,6 +52,9 @@ TEST_CASE("AdjacencyList: undirected graph edge operations") {
     g.addEdge(v1Id, v2Id, 5.0);
     g.addEdge(v2Id, v3Id, 7.0);
 
+    /**
+     * @brief Ensures getNeighbors retrieves all correct adjacent vertices dynamically.
+     */
     SUBCASE("getNeighbors retrieves correct adjacent vertices") {
         auto n1 = g.getNeighbors(v1Id);
         auto n2 = g.getNeighbors(v2Id);
@@ -52,6 +71,9 @@ TEST_CASE("AdjacencyList: undirected graph edge operations") {
         CHECK(n3[0] == v2Id);
     }
 
+    /**
+     * @brief Ensures directional queries correctly ignore direction in an undirected graph.
+     */
     SUBCASE("hasEdge and getEdgeWeight work regardless of direction") {
         CHECK(g.hasEdge(v1Id, v2Id));
         CHECK(g.hasEdge(v2Id, v1Id));
@@ -59,6 +81,9 @@ TEST_CASE("AdjacencyList: undirected graph edge operations") {
         CHECK_FALSE(g.hasEdge(v1Id, v3Id));
     }
 
+    /**
+     * @brief Tests that retrieving incident edges yields correct endpoints and weights.
+     */
     SUBCASE("getEdgesFrom retrieves all incident edges") {
         auto edgesFrom2 = g.getEdgesFrom(v2Id);
         CHECK(edgesFrom2.size() == 2);
@@ -73,6 +98,9 @@ TEST_CASE("AdjacencyList: undirected graph edge operations") {
     }
 }
 
+/**
+ * @brief Tests operations concerning edges in a directed graph context.
+ */
 TEST_CASE("AdjacencyList: directed graph edge operations") {
     AdjacencyList<Vertex> g(true);
 
@@ -93,6 +121,9 @@ TEST_CASE("AdjacencyList: directed graph edge operations") {
     CHECK_FALSE(g.hasEdge(bId, aId));
 }
 
+/**
+ * @brief Tests the capability to properly remove edges and vertices entirely.
+ */
 TEST_CASE("AdjacencyList: removeEdge and removeVertex") {
     AdjacencyList<Vertex> g(false);
     int aId = g.addVertex(makeVertex("A"));
@@ -103,12 +134,18 @@ TEST_CASE("AdjacencyList: removeEdge and removeVertex") {
     g.addEdge(bId, cId, 7.0);
     g.addEdge(aId, cId, 15.0);
 
+    /**
+     * @brief Verifies that a removed edge is correctly purged from both adjacencies.
+     */
     SUBCASE("Removing an edge removes adjacency") {
         g.removeEdge(aId, bId);
         CHECK_FALSE(g.hasEdge(aId, bId));
         CHECK_FALSE(g.hasEdge(bId, aId));
     }
 
+    /**
+     * @brief Validates removal flags and ID reuse behavior when a vertex is deleted.
+     */
     SUBCASE("Removing a vertex deactivates incident edges and frees the ID") {
         Vertex* bPtr = g.getVertex(bId);
         g.removeVertex(bId);
@@ -122,6 +159,9 @@ TEST_CASE("AdjacencyList: removeEdge and removeVertex") {
     }
 }
 
+/**
+ * @brief Ensures AdjacencyList gracefully handles queries with negative or non-existent IDs.
+ */
 TEST_CASE("AdjacencyList: invalid IDs and null checks") {
     AdjacencyList<Vertex> g(true);
     int aId = g.addVertex(makeVertex("A"));
@@ -136,6 +176,9 @@ TEST_CASE("AdjacencyList: invalid IDs and null checks") {
     CHECK(g.getVertex(99) == nullptr);
 }
 
+/**
+ * @brief Tests edge iteration and summing weight calculations.
+ */
 TEST_CASE("AdjacencyList: edge weights sum correctness") {
     AdjacencyList<Vertex> g(false, true);
     int aId = g.addVertex(makeVertex("A"));

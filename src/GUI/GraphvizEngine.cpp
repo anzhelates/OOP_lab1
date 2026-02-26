@@ -1,3 +1,7 @@
+/**
+ * @file GraphvizEngine.cpp
+ * @brief Implementation of the GraphvizEngine class.
+ */
 #include "GraphvizEngine.h"
 #include "Edge.h"
 #include <graphviz/gvc.h>

@@ -1,3 +1,7 @@
+/**
+ * @file VertexItem.cpp
+ * @brief Implementation of the VertexItem class.
+ */
 #include "VertexItem.h"
 #include "EdgeItem.h"
 #include <QGraphicsScene>

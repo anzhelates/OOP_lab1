@@ -1,3 +1,7 @@
+/**
+* @file GraphSetupDialog.cpp
+ * @brief Implementation of the dialog allowing users to setup new graph parameters.
+ */
 #include "GraphSetupDialog.h"
 #include "ui_GraphSetupDialog.h"
 #include <QStringList>
