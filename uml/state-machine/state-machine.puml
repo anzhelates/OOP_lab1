@@ -1,0 +1,54 @@
+@startuml
+title State Machine: Algorithm Execution Cycle
+
+[*] --> Editing : App Starts
+
+state Editing {
+  Editing : - Modify graph structure (Add/Remove)
+  Editing : - Change edge weights
+  Editing : - Select Algorithm & Start Vertex
+}
+
+Editing --> Ready : Click "Start"
+
+state Ready {
+  Ready : - Initialize AlgoState (Step 0)
+  Ready : - Highlight Start Node
+  Ready : - Disable editing controls
+}
+
+Ready --> Playing : Click "Play"
+Ready --> Paused : Click "Next" (Manual Step)
+
+state Playing {
+  Playing : - QTimer running (m_playSpeedMs)
+  Playing : - Auto-call nextStep()
+  Playing : - UI syncs with AlgoState
+}
+
+Playing --> Paused : Click "Pause"
+Paused --> Playing : Click "Play"
+
+state Paused {
+  Paused : - QTimer stopped
+  Paused : - Awaiting manual Next/Prev
+}
+
+Playing --> Finished : nextStep() == false
+Paused --> Finished : nextStep() == false
+
+state Finished {
+  Finished : - Display shortest path / results
+  Finished : - Show "Finished" dialog
+}
+
+Finished --> Ready : Click "Reset"
+Paused --> Ready : Click "Reset"
+Playing --> Ready : Click "Reset"
+
+Ready --> Editing : Edit Graph 
+Paused --> Editing : Edit Graph
+Playing --> Editing : Edit Graph
+Finished --> Editing : Edit Graph
+
+@enduml

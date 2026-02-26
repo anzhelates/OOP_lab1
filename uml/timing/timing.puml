@@ -1,0 +1,79 @@
+@startuml
+title Timing Diagram: Event-Driven Control Flow
+
+concise "User" as User
+robust "MainWindow" as Main
+robust "m_playTimer" as Timer
+robust "AlgoController" as Algo
+robust "GraphScene" as Scene
+
+@0
+User is Idle
+Main is Idle
+Timer is Stopped
+Algo is Idle
+Scene is Idle
+
+@100
+User is "Click Play"
+User -> Main : onPlayClicked()
+Main is "Processing"
+Main -> Timer : start(speed)
+Timer is Running
+Main is Idle
+User is Idle
+
+@200
+Timer -> Main : timeout()
+Main is "Stepping"
+Main -> Algo : nextStep()
+Algo is "Computing"
+Algo -> Main : \nreturn state
+Algo is Idle
+Main -> Scene : applyState()
+Scene is "Rendering"
+
+@250
+Main is Idle
+Scene is Idle
+
+@400
+User is "Click Pause"
+User -> Main : onPauseClicked()
+Main is "Processing"
+Main -> Timer : stop()
+Timer is Stopped
+Main is Idle
+User is Idle
+
+@500
+User is "Click Next"
+User -> Main : nextStep()
+Main is "Stepping"
+Main -> Algo : nextStep()
+Algo is "Computing"
+Algo -> Main : return state
+Algo is Idle
+Main -> Scene : applyState()
+Scene is "Rendering"
+
+@550
+Main is Idle
+Scene is Idle
+
+@700
+User is "Click Prev"
+User -> Main : prevStep()
+Main is "Stepping"
+Main -> Algo : prevStep()
+Algo is "Retrieving"
+Algo -> Main : return old state
+Algo is Idle
+Main -> Scene : applyState()
+Scene is "Rendering"
+
+@750
+Main is Idle
+Scene is Idle
+
+@enduml

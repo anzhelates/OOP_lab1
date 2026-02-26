@@ -1,0 +1,25 @@
+@startuml
+title Communication Diagram: Graph Export Workflow
+
+object "User" as user
+object "cp : ControlPanel" as panel
+object "mw : MainWindow" as main
+object "gv : GraphvizEngine" as engine
+object "g : AdjacencyList" as graph
+
+user -down-> panel : 1: clicks "Choose Dir"
+panel -right-> main : 1.1: <<signal>> chooseDirClicked()
+main -up-> user : 1.2: QFileDialog::getExistingDirectory()
+main -> main : 1.3: Update m_currentExportDir
+
+user -down-> panel : 2: clicks "Export"
+panel -right-> main : 2.1: <<signal>> exportClicked(format)
+main -down-> main : 2.2: onExportFromPanel(format)
+
+main -down-> engine : 2.3: exportToFile(graph, filePath, format, algo)
+engine -left-> graph : 2.3.1: getVertices(), getEdges()
+engine -down-> engine : 2.3.2: createGvGraph()\n2.3.3: gvLayout()\n2.3.4: gvRenderFilename()
+
+engine --up-> main : 2.4: return bool (success)
+main -up-> user : 2.5: QMessageBox status display
+@enduml
